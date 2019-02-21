@@ -1,0 +1,10 @@
+HEADSET
+Gyroscope, Accelerator, Bluetooth | Android icindekiler kullanilacak
+
+CONTROLLER-1
+Gyroscope, Accelerator, Bluetooth, Joystick, Trigger
+
+CONTROLLER-2
+Gyroscope, Accelerator, Bluetooth, Joystick, Trigger
+
+Alınacaklar: 1xjoystick, 1xpil, 1xbluetooth, 1xnano, 1xmikrofon, 2xbuton, 1xteker

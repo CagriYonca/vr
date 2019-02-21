@@ -1,0 +1,99 @@
+import serial
+import sys
+import string
+import subprocess
+from screeninfo import get_monitors  # ekran cozunurlugunun bulunmasi eklenecek
+
+if len(sys.argv) == 1:
+    device = "/dev/ttyUSB0"
+    monNum = 0
+    stickType = 0
+if len(sys.argv) == 2:
+    device = sys.argv[1]
+if len(sys.argv) == 3:
+    device = sys.argv[1]
+    monNum = int(sys.argv[2])
+if len(sys.argv) == 4:
+    device = sys.argv[1]
+    monNum = int(sys.argv[2])
+    stickType = int(sys.argv[3])
+ser = serial.Serial(device, baudrate=115200, timeout=1)
+
+def getResolution(monNum):
+    initialMonitors = get_monitors()    
+    xf = str(initialMonitors[monNum]).find("(")    
+    xl = str(initialMonitors[monNum]).find("x")    
+    yl = str(initialMonitors[monNum]).find("+")    
+    monX = int(str(initialMonitors[monNum])[xf + 1 : xl])
+    monY = int(str(initialMonitors[monNum])[xl + 1 : yl])
+
+    return monX, monY
+
+def getMouseLocations():
+    cursorLocation = subprocess.check_output(["bash", "-c", "xdotool getmouselocation"]).decode("utf-8")
+    cursorX = int(cursorLocation[cursorLocation.find("x") + 2 : cursorLocation.find("y") - 1])
+    cursorY = int(cursorLocation[cursorLocation.find("y") + 2 : cursorLocation.find("s") - 1])
+    
+    return cursorX, cursorY
+
+def moveMouse(cX, cY, stickX, stickY, monX, monY):
+    if (monX > (cX + stickX) > 0):          
+        cX += stickX 
+    if (monY > (cY + stickY) > 0):
+        cY += stickY
+
+    a =  subprocess.check_output(["bash", "-c", "xdotool mousemove " + str(cX) + " " + str(cY)])
+    
+    return cX, cY
+
+def clickMouse(signal):
+    if signal == 0:
+       a = subprocess.check_output(["bash", "-c", "xdotool click 1"])
+
+def getData(connection):
+    try:
+        data = str(connection.readline().decode("utf-8"))
+        """ Rotation """
+        aX = int(data[data.find("mapAX") + 5 : data.find("mapAY")])
+        aY = int(data[data.find("mapAY") + 5 : data.find("mapAZ")])
+        aZ = int(data[data.find("mapAZ") + 5 : data.find("mapGX")])
+    
+        """ Acceleration"""
+        gX = int(data[data.find("mapGX") + 5 : data.find("mapGY")])
+        gY = int(data[data.find("mapGY") + 5 : data.find("mapGZ")])
+        gZ = int(data[data.find("mapGZ") + 5 : data.find("x")])
+    
+        """ Joystick """
+        x = int(data[data.find("x") + 1 : data.find("y")])
+        y = int(data[data.find("y") + 1 : data.find("s")])
+        z = int(data[data.find("s") + 1])
+
+    # Calibrate
+        aX *= -1
+        aY *= -1
+        gX *= -1
+        gY *= -1
+        gZ *= -1
+        
+        return aX, aY, aZ, gX, gY, gZ, x, y, z
+    
+    except:
+        return 0, 0, 0, 0, 0, 0, 0, 0, 1
+
+
+
+cX, cY = getMouseLocations()
+monX, monY = getResolution(monNum)
+
+while True:
+    aX, aY, aZ, gX, gY, gZ, sX, sY, sZ = getData(ser)
+    # Mouse'u hareket ettir
+    if(stickType == 0):
+        cX, cY = moveMouse(cX, cY, -1 * sY, sX, monX, monY)         
+    else:
+        cX, cY = moveMouse(cX, cY, -aX, aY, monX, monY)         
+    clickMouse(sZ)
+    print(chr(27) + "[2J")
+    print("X \t Y \t Z \tEgim\n{} \t {} \t {}\n".format(aX, aY, aZ))
+    print("X \t Y \t Z \tIvme\n{} \t {} \t {}\n".format(gX, gY, gZ))
+    print("X \t Y \t Z \tJoystick\n{} \t {} \t {}\n".format(sY, sX, sZ))   

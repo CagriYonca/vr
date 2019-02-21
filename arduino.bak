@@ -1,0 +1,75 @@
+#include <Wire.h>
+#include <MPU6050.h>
+#include "I2Cdev.h"
+
+// Gyro
+MPU6050 gyro;
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+int16_t mapAX = 0, mapAY = 0, mapAZ = 0, mapGX = 0, mapGY = 0, mapGZ = 0;
+
+// Joystick
+int VRx = A0;
+int VRy = A1;
+int SW = 2;
+
+int xPosition = 0;
+int yPosition = 0;
+int SW_state = 0;
+int mapX = 0;
+int mapY = 0;
+
+void setup() {
+  // Gyro
+  Wire.begin();
+  Serial.begin(115200);
+  gyro.initialize();
+    
+  // Joystick
+  digitalWrite(SW, HIGH);
+  pinMode(SW, INPUT_PULLUP); 
+  
+}
+
+void loop() {
+  
+  // Gyro
+  gyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  mapAX = map(ax, -16384, 16384, -36, 36);
+  mapAY = map(ay, -16384, 16384, -36, 36);
+  mapAZ = map(az, -16384, 16384, -36, 36);
+  mapGX = map(gx, -16384, 16384, -36, 36);
+  mapGY = map(gy, -16384, 16384, -36, 36);
+  mapGZ = map(gz, -16384, 16384, -36, 36);
+  Serial.print("mapAX");
+  Serial.print(mapAX);
+  Serial.print("mapAY"); 
+  Serial.print(mapAY); 
+  Serial.print("mapAZ"); 
+  Serial.print(mapAZ); 
+  Serial.print("mapGX");
+  Serial.print(mapGX);
+  Serial.print("mapGY");
+  Serial.print(mapGY);
+  Serial.print("mapGZ");  
+  Serial.print(mapGZ);
+
+  
+  //  Joystick
+
+  xPosition = analogRead(VRx) - 5;
+  yPosition = analogRead(VRy) - 12;
+  SW_state = digitalRead(SW);
+  mapX = map(xPosition, 0, 1023, -50, 50);
+  mapY = map(yPosition, 0, 1023, -50, 50);
+  
+  Serial.print("x");
+  Serial.print(mapX);
+  Serial.print("y");
+  Serial.print(mapY);
+  Serial.print("s");
+  Serial.print(SW_state);
+  Serial.print("\n");
+
+  delay(100);
+}
